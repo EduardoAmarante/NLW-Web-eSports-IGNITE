@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useState } from 'react';
 
 
 import { Input } from './form/Input';
+import axios from 'axios';
 
 interface Game {
   id: String;
@@ -18,20 +19,37 @@ export function CreateAdModal(){
 
   const [games,setGames] = useState<Game[]>([])
   const [weekDays, setWeekDays] = useState<string[]>([])
+  const [UseVoiceChannel, setUseVoiceChannel] = useState(false)
 
   useEffect(()=>{
-    fetch('http://localhost:3333/games')
-    .then(response => response.json())
-    .then(data =>{
-      setGames(data)
+    axios('http://localhost:3333/games').then(response =>{
+      setGames(response.data)
     })
   }, [])
 
-  function handleCreateAd(event: FormEvent) {
+  async function handleCreateAd(event: FormEvent) {
     event.preventDefault();
     const formData = new FormData(event.target as HTMLFormElement)
     const data = Object.fromEntries(formData)
-    console.log(data)
+    
+    if (!data.name){
+      return;
+    }
+
+    try {
+      await axios.post(`http://localhost:3333/games/${data.game}/ads`,{
+      "name": data.name,
+      "yearsPlaying": Number(data.yearsPlaying),
+      "discord": data.discord,
+      "weekDays": (weekDays).map(Number),
+      "hourStart": data.hourStart,
+      "hourEnd": data.hourEnd,
+      "useVoiceChannel": UseVoiceChannel
+    })
+      alert('anuncio criado com sucesso')
+    } catch (err) {
+      alert('erro ao criar anuncio')
+    }
   }
 
   return (
@@ -143,7 +161,16 @@ export function CreateAdModal(){
               </div>
 
               <label className='mt-2 flex gap-2 text-sm'>
-                <Checkbox.Root className='w-6 h-6 rounded bg-zinc-900 p-1 items-center '>
+                <Checkbox.Root 
+                  checked = {UseVoiceChannel}
+                onCheckedChange={(checked) => {
+                  if (checked == true) {
+                    setUseVoiceChannel(true)
+                  } else {
+                    setUseVoiceChannel(false)
+                  }
+                }}
+                className='w-6 h-6 rounded bg-zinc-900 p-1 items-center '>
                   <Checkbox.Indicator>
                     <Check className='w-4 h-4 text-emerald-400'/>
                   </Checkbox.Indicator>
